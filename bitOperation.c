@@ -2,6 +2,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <math.h>
+#include <limits.h>
 
 typedef unsigned char *byte_pointer;
 
@@ -130,6 +131,19 @@ void bin2hex(char *hex,const char *bits,int len){
 	}
 }
 
+/*Determine whether arguments can be added without overflow*/
+int uadd_ok(unsigned x,unsigned y){
+	unsigned sum=x+y;
+	return sum>=x;
+}
+
+int tadd_ok(int x,int y){
+	int sum=x+y;
+	int neg_over=x<0&&y<0&&sum>=0;
+	int pos_over=x>0&&y>0&&sum<0;
+	return !neg_over&&!pos_over;
+}
+
 int fun1(unsigned word){
 	return (int) ((word<<24)>>24);
 }
@@ -138,23 +152,61 @@ int fun2(unsigned word){
 	return ((int)word<<24)>>24;
 }
 
+int bitCount(int x) {
+  unsigned int mask=0x80000000;
+  int ret=0;
+  while(mask){
+    if(mask&x) ++ret;
+    mask>>=1;
+  }
+  return ret;
+}
 
-int main(){
-	/*
-	char buffer[33];
-	buffer[32]='\0';
-	int2bin(-8,buffer,32);
-	printf("%s\n",buffer);
-	*/
-	int val=0xEDCBA987;
-	int val1=fun1(val);
-	int val2=fun2(val);
-	show_int(val1);
-	show_int(val2);
+int bang(int x) {
+  unsigned int mask=0x80000000;
+  while(mask){
+    if(mask&x)
+      return 0;
+    mask>>=1;
+  }
+  return 1;
+}
+
+int fitsBits(int x, int n) {
+  unsigned int mask=0x80000000;
+  int i=0;
+  int ret;
+  if(!(mask&x)){
+  	//printf("pos\n");
+    while(i<=32&&((x>>i++)&0x1))
+      ret=i+1;
+  }else{
+  	//printf("neg\n");
+    while(i<=32&&(~x>>i++)&0x1)
+      ret=i+1;
+  }
+  return ret+1<=n;
 
 }
 
 
 
+
+int divpwr2(int x, int n) {
+    return x>>n;
+}
+int divpwr(int x, int n){
+    return (x + ((x >> 31) & ((1 << n) + ~0))) >> n;
+}
+
+int main(){
+	int val=fitsBits(5,3);
+	printf("%d\n",val);
+	printf("%d\n",(1<<4)+~0);
+	printf("%d\n",(-33>>31)&((1<<4)+~0));
+	int val2=divpwr2(-17,4);
+	printf("%d\n",val2);
+
+}
 
 
